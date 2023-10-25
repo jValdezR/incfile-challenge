@@ -1,15 +1,13 @@
-const { default: puppeteer } = require('puppeteer');
+// incfile Challenge
 
+// Import necessary dependencies
+const puppeteer = require('puppeteer');
 require('dotenv').config();
 
+// Function to fetch tasks from Trello
 const getTasksFromTrello = async () => {
     const taskArray = [];
-    const browser = await puppeteer.launch(
-        {
-            headless: false,
-        }
-    );
-
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
 
     try {
@@ -25,13 +23,14 @@ const getTasksFromTrello = async () => {
             return [...elements].map(element => {
                 const title = element.querySelector('.list-card-title.js-card-name').innerText;
                 const url = element.href;
-                const href = url.substring(18, url.lenght)
+                const href = url.substring(18, url.length); // Fix the typo in 'length'
                 return {
                     href,
                     title
-                }
-            })
+                };
+            });
         });
+
         for (let i = 0; i < tasksElement.length; i++) {
             await page.click(`a[href="${tasksElement[i].href}"]`);
             try {
@@ -40,7 +39,7 @@ const getTasksFromTrello = async () => {
                     timeout: 500
                 });
             } catch (error) {
-
+                // Handle any errors as needed
             }
 
             const taskObject = await page.evaluate(() => {
@@ -53,9 +52,8 @@ const getTasksFromTrello = async () => {
                     list,
                     description,
                     subTasks
-                }
-
-            })
+                };
+            });
             taskArray.push({
                 title: tasksElement[i].title,
                 ...taskObject
@@ -69,15 +67,13 @@ const getTasksFromTrello = async () => {
     } catch (error) {
         console.log(error);
     }
+
     await browser.close();
 }
 
+// Function to create tasks on Todoist
 async function createTasksOnToDoIst(taskArray) {
-    const browser = await puppeteer.launch(
-        {
-            headless: false,
-        }
-    );
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
 
     try {
@@ -109,7 +105,7 @@ async function createTasksOnToDoIst(taskArray) {
             visible: true,
             timeout: 1000
         });
-        
+
         const titleElement = await page.$('.UjpFDa7.no-focus-marker.task_editor__content_field--semibold div p.is-empty.is-editor-empty');
         const descriptionTask = await page.$('.UjpFDa7.task_editor__description_field.no-focus-marker div p.is-empty.is-editor-empty');
 
@@ -161,6 +157,7 @@ async function createTasksOnToDoIst(taskArray) {
     await browser.close();
 }
 
+// Main function to execute the process
 const main = async () => {
     const getTasks = await getTasksFromTrello();
 
