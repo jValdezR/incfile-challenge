@@ -3,6 +3,7 @@ const { default: puppeteer } = require('puppeteer');
 require('dotenv').config();
 
 const getTasksFromTrello = async () => {
+    const taskArray = [];
     const browser = await puppeteer.launch(
         {
             headless: false,
@@ -31,13 +32,12 @@ const getTasksFromTrello = async () => {
                 }
             })
         });
-        console.log(tasksElement);
         for (let i = 0; i < tasksElement.length; i++) {
             await page.click(`a[href="${tasksElement[i].href}"]`);
             try {
                 await page.waitForSelector('.checklist-item-details-text.markeddown.js-checkitem-name', {
                     visible: true,
-                    timeout: 300
+                    timeout: 500
                 });
             } catch (error) {
 
@@ -56,7 +56,6 @@ const getTasksFromTrello = async () => {
                 }
 
             })
-
             taskArray.push({
                 title: tasksElement[i].title,
                 ...taskObject
@@ -97,113 +96,87 @@ async function createTasksOnToDoIst(taskArray) {
             page.click('.F9gvIPl.rWfXb_e._8313bd46._7a4dbd5f._95951888._2a3b75a1._8c75067a'),
         ]);
 
-
-        await page.waitForSelector('.plus_add_button', {
+        await page.waitForSelector('button.plus_add_button', {
             visible: true,
-            timeout: 10000
+            timeout: 3000
         });
 
-        await page.click('.plus_add_button');
+        await new Promise(r => setTimeout(r, 3000));
 
-        page.waitForSelector('.UjpFDa7.no-focus-marker.task_editor__content_field--semibold div p.is-empty.is-editor-empty',{
+        await page.click('button.plus_add_button');
+
+        await page.waitForSelector('.UjpFDa7.no-focus-marker.task_editor__content_field--semibold div p.is-empty.is-editor-empty', {
             visible: true,
             timeout: 1000
         });
-
+        
         const titleElement = await page.$('.UjpFDa7.no-focus-marker.task_editor__content_field--semibold div p.is-empty.is-editor-empty');
         const descriptionTask = await page.$('.UjpFDa7.task_editor__description_field.no-focus-marker div p.is-empty.is-editor-empty');
 
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < taskArray.length; i++) {
+            await new Promise(r => setTimeout(r, 200));
             await titleElement.type(taskArray[i].title);
-            await new Promise(r=>setTimeout(r,200));
+            await new Promise(r => setTimeout(r, 200));
             await descriptionTask.type(taskArray[i].description);
-            await new Promise(r=>setTimeout(r,200));
+            await new Promise(r => setTimeout(r, 200));
             const createTaskButton = await page.$('._8313bd46._7a4dbd5f._5e45d59f._2a3b75a1._56a651f6');
             await createTaskButton.click();
             await page.waitForSelector('._8313bd46._7a4dbd5f._5e45d59f._2a3b75a1._56a651f6', {
                 visible: true,
                 timeout: 1000
-            })
+            });
+            await new Promise(r => setTimeout(r, 200));
         }
 
         await page.click('._8313bd46._54d56775._5e45d59f._2a3b75a1._56a651f6');
 
-
-
-
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < taskArray.length; i++) {
             const elements = await page.$$('.task_content');
             const elementsArray = [...elements];
             await elementsArray[i].click();
             await page.waitForSelector('._8313bd46.f169a390._8b7f1a82._2a3b75a1._56a651f6', {
                 visible: true,
-                timeout: 1000
+                timeout: 2000
             });
 
             await page.click('._8313bd46.f169a390._8b7f1a82._2a3b75a1._56a651f6');
 
+            await new Promise(r => setTimeout(r, 200));
+
             for (let j = 0; j < taskArray[i].subTasks.length; j++) {
                 await titleElement.type(taskArray[i].subTasks[j]);
+                await new Promise(r => setTimeout(r, 200));
                 const createTaskButton = await page.$('._8313bd46._7a4dbd5f._5e45d59f._2a3b75a1._56a651f6');
                 await createTaskButton.click();
+                await new Promise(r => setTimeout(r, 200));
             }
             await page.click('._8313bd46._54d56775._5e45d59f._2a3b75a1._56a651f6');
             await page.click('button[aria-label="Cerrar ventana"]');
-
         }
 
     } catch (error) {
         console.log(error);
     }
+
+    await browser.close();
 }
 
 const main = async () => {
-    // const taskArray = await getTasksFromTrello();
-    // createTasksOnToDoIst(taskArray);
+    const getTasks = await getTasksFromTrello();
 
-    // console.log(await getTasksFromTrello());
+    const taskFromTrello = [];
 
-    await createTasksOnToDoIst([
-        {
-            title: 'Cook new recipes on the weekend',
-            list: 'Personal',
-            description: '',
-            subTasks: [
-                "Ramsay's Leek & Mushroom Pasta:thumbsup:",
-                'Smashed Potatoes',
-                'Spaghetti with Italian Sausage and Mushroom:smile:'
-            ]
-        },
-        {
-            title: 'Research freelance possibilites',
-            list: 'Personal',
-            description: '',
-            subTasks: []
-        },
-        {
-            title: 'Land first freelance job',
-            list: 'Personal',
-            description: '',
-            subTasks: []
-        },
-        {
-            title: 'Compile list of favorite photos for photo book gift at Christmas',
-            list: 'Personal',
-            description: '',
-            subTasks: []
-        },
-        {
-            title: 'Complete software update 4.1 before September',
-            list: 'Work',
-            description: '',
-            subTasks: [
-                'Verify the GetData function works with new form',
-                'Test the other forms to make sure they still work with the updated data',
-                "Fix error that occurs when user clicks the add data button and then today's date"
-            ]
-        },
+    while (taskFromTrello.length < 5) {
+        const i = Math.floor(Math.random() * getTasks.length);
 
-    ]);
+        taskFromTrello.push(getTasks[i]);
+
+        getTasks.splice(i, 1);
+    }
+
+    await createTasksOnToDoIst(taskFromTrello);
+
+    process.exit();
 }
 
 main();
