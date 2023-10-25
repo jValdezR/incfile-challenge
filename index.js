@@ -23,7 +23,7 @@ const getTasksFromTrello = async () => {
             return [...elements].map(element => {
                 const title = element.querySelector('.list-card-title.js-card-name').innerText;
                 const url = element.href;
-                const href = url.substring(18, url.length); // Fix the typo in 'length'
+                const href = url.substring(18, url.length);
                 return {
                     href,
                     title
@@ -65,7 +65,6 @@ const getTasksFromTrello = async () => {
         return taskArray;
 
     } catch (error) {
-        console.log(error);
     }
 
     await browser.close();
@@ -151,7 +150,6 @@ async function createTasksOnToDoIst(taskArray) {
         }
 
     } catch (error) {
-        console.log(error);
     }
 
     await browser.close();
